@@ -46,7 +46,7 @@ func StartBrowser(o BrowserStartOpts) (cmd *exec.Cmd, err error) {
 
 	args := browserArgs(!o.ShowBrowser, profileDir)
 
-	fmt.Printf("browser: running browser using cmd '%s %v'\n", o.BrowserPath, strings.Join(args, " "))
+	vPrintf("browser: running browser using cmd '%s %v'\n", o.BrowserPath, strings.Join(args, " "))
 	cmd = exec.Command(o.BrowserPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -69,8 +69,8 @@ func ConnectBrowser(o BrowserConnOpts) (client *mcl.Client, err error) {
 		if err == nil {
 			break
 		}
-		fmt.Println(err)
-		fmt.Println("browser: retrying connection in 1 second")
+		vPrintln(err)
+		vPrintln("browser: retrying connection in 1 second")
 		time.Sleep(1. * time.Second)
 	}
 	if err != nil {

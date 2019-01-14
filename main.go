@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"time"
 
 	flag "github.com/ogier/pflag"
 )
@@ -51,5 +53,54 @@ func main() {
 
 	var scraper Scraper
 
-	scraper.Login(client, parms)
+	err = scraper.Login(client, parms)
+	if err != nil {
+		fmt.Printf("Login failed: %v\n", err)
+		return
+	}
+
+	if *onlyLogin {
+		return
+	}
+
+	measurements, err := scraper.GetTemperatures(client, parms)
+
+	var format formatter
+	format = formatAsCsv
+
+	fmt.Println(format(measurements))
+
+}
+
+type formatter func(measurements *Measurements) string
+
+func formatAsCsv(measurements *Measurements) string {
+	var buf bytes.Buffer
+
+	// Header
+	fmt.Fprintf(&buf, "Time, ")
+	for _, v := range measurements.InternalTemperatures {
+		fmt.Fprintf(&buf, "%s Int. Temp., ", v.Label)
+	}
+	for _, v := range measurements.Humidities {
+		fmt.Fprintf(&buf, "%s Humid., ", v.Label)
+	}
+	for _, v := range measurements.ExternalTemperatures {
+		fmt.Fprintf(&buf, "%s Ext. Temp., ", v.Label)
+	}
+	buf.WriteRune('\n')
+
+	fmt.Fprintf(&buf, "%v, ", time.Now().Format("Jan 2 15:04:05 2006"))
+	for _, v := range measurements.InternalTemperatures {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	for _, v := range measurements.Humidities {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	for _, v := range measurements.ExternalTemperatures {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	buf.WriteRune('\n')
+
+	return buf.String()
 }

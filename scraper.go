@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
+	"unicode"
 
 	mcl "github.com/njasm/marionette_client"
 )
@@ -46,30 +50,37 @@ func ElementIsVisible(by mcl.By, value string) func(f mcl.Finder) (bool, *mcl.We
 	}
 }
 
-// waitById waits for the element with ID `id` to be loaded.
-func waitById(client *mcl.Client, fieldNameForLog, id string) {
-	vPrintf("Waiting for %s to load (element with id %s)\n", fieldNameForLog, id)
-	mcl.Wait(client).For(waitTime).Until(mcl.ElementIsPresent(mcl.By(mcl.ID), id))
+func waitBy(client *mcl.Client, fieldNameForLog, val string, by mcl.By) {
+	vPrintf("Waiting for %s to load (element %s %s)\n", fieldNameForLog, by, val)
+	mcl.Wait(client).For(waitTime).Until(mcl.ElementIsPresent(by, val))
 }
 
 func findById(client *mcl.Client, fieldNameForLog, id string, flags findFlag) (elem *mcl.WebElement, err error) {
+	return findBy(client, fieldNameForLog, id, flags, mcl.ID)
+}
+
+func findBySelector(client *mcl.Client, fieldNameForLog, sel string, flags findFlag) (elem *mcl.WebElement, err error) {
+	return findBy(client, fieldNameForLog, sel, flags, mcl.CSS_SELECTOR)
+}
+
+func findBy(client *mcl.Client, fieldNameForLog, val string, flags findFlag, by mcl.By) (elem *mcl.WebElement, err error) {
 	if flags&flagWait > 0 {
-		waitById(client, fieldNameForLog, id)
+		waitBy(client, fieldNameForLog, val, by)
 	}
 
 	if flags&flagVisible > 0 {
-		mcl.Wait(client).For(waitTime).Until(ElementIsVisible(mcl.By(mcl.ID), id))
+		mcl.Wait(client).For(waitTime).Until(ElementIsVisible(by, val))
 	}
 
-	vPrintf("Finding %s (element with id %s)\n", fieldNameForLog, id)
-	elem, err = client.FindElement(mcl.ID, id)
+	vPrintf("Finding %s (element with id %s)\n", fieldNameForLog, val)
+	elem, err = client.FindElement(by, val)
 	if err != nil {
-		err = fmt.Errorf("When finding %s (element with id %s), got an error: %s", fieldNameForLog, id, err.Error())
+		err = fmt.Errorf("When finding %s by %s %s, got an error: %s", fieldNameForLog, by, val, err.Error())
 		return
 	}
 
 	if flags&flagClick > 0 {
-		vPrintf("Clicking %s (element with id %s)\n", fieldNameForLog, id)
+		vPrintf("Clicking %s (element %s %s)\n", fieldNameForLog, by, val)
 		elem.Click()
 	}
 
@@ -108,8 +119,15 @@ func (s Scraper) Login(client *mcl.Client, parms ScraperParams) (err error) {
 	}
 
 	vPrintln("Navigating to site")
-
 	client.Navigate(nestUrl)
+
+	vPrintln("Checking if login is required")
+	_, err = findBySelector(client, "thermostat location", ".puck-item > a", flagWait)
+	if err == nil {
+		// The element with class .puck-item already exists, meaning we didn't need to log in.
+		vPrintln("Login was not required")
+		return
+	}
 
 	_, err = findById(client, "login field", loginFieldId, flagWait|flagClick)
 	checkErr()
@@ -124,68 +142,159 @@ func (s Scraper) Login(client *mcl.Client, parms ScraperParams) (err error) {
 	err = setValueOfActive(client, parms.Password)
 	checkErr()
 
-	//_, err = client.ExecuteScript(
-	//	fmt.Sprintf("document.getElementById('pass').value='%s'", parms.Password), nil, 5, false)
-	//checkErr()
-
 	_, err = findById(client, "sign-in button", loginButtonId, flagClick)
 	checkErr()
 
-	// document.querySelector(".puck-item > a").click()
+	return
+}
 
-	/*
-		vPrintln("sleeping 5 seconds to make sure everything loaded")
-		time.Sleep(5000 * time.Millisecond)
+func (s Scraper) GetTemperatures(client *mcl.Client, parms ScraperParams) (measurements *Measurements, err error) {
+	// Handle panics
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
 
-		vPrintln("checking if secret question prompt is present")
-		elem, err = client.FindElement(mcl.ID, "ngdialog1-aria-labelledby")
-		if err == nil {
-			if strings.ToLower(strings.TrimSpace(elem.Text())) == "confirm your identity" {
-				vPrintln("detected secret question prompt. Finding secret question")
+	checkErr := func() {
+		if err != nil {
+			fmt.Println("Error: ", err)
+			panic(1)
+		}
+	}
 
-				elem, err = client.FindElement(mcl.ID, "labelWrap_301 ")
-				if err != nil {
-					fmt.Println("Error finding secret question:", err)
-					return
-				}
+	_, err = findBySelector(client, "thermostat location", ".puck-item > a", flagWait|flagClick)
+	checkErr()
 
-				vPrintln("secret question is:", elem.Text())
+	vPrintln("Scraping thermostat info")
 
-				q := strings.TrimSpace(elem.Text())
-				ans, ok := parms.SecurityQuestions[q]
-				if !ok {
-					err = fmt.Errorf("No answer configured for the security question '%s'", q)
-					fmt.Println(err)
-					return
-				}
+	// The temperature sensors, inside humidity, and outside temperature are all layed out as HTML element
+	// siblings, with headers as <header> elements, and everything else as <divs>. There is nothing to
+	// distinguish a thermostat temperature div from a humidity div, or outside temperature div.
+	//
+	// To get useful information, then, what I do here is take all the siblings and flatten the text under
+	// them into an ordered array of values. This is done by selecting the right types of elements all together,
+	// then mapping a function to that array that converts the array elements to their contained text.
+	//
+	// The result is something like:
+	// ["TEMPERATURE SENSORS","Dining Room Thermostat","19.5°","Bedroom 1","17.5°","Bedroom 2","17.5°","Upstairs Hallway","19°","INSIDE HUMIDITY","Dining Room","31%","OUTSIDE TEMP.","Ottawa","-16°"]
+	//
 
-				vPrintln("finding element to answer secret question")
-				elem, err = client.FindElement(mcl.ID, "answer")
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+	resp, err := client.ExecuteScript(`return Array.from(document.querySelectorAll('.card.type-thermostat div[class*="style_title"],div[class*="style_value"],header')).map(function(val){ return val.textContent; })`, nil, 5, false)
+	checkErr()
 
-				vPrintln("entering answer: ", ans)
+	var result struct {
+		Value []string
+	}
 
-				err = elem.SendKeys(ans)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+	vPrintln("Decoding thermostat info")
+	err = json.Unmarshal([]byte(resp.Value), &result)
+	checkErr()
 
-				vPrintln("finding 'Enter' button")
-				elem, err = client.FindElement(mcl.CSS_SELECTOR, "form[name=enterAnswerForm] button")
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+	vPrintln("Thermostat raw info: ", result.Value)
 
-				time.Sleep(1 * time.Second)
-				vPrintln("clicking 'Enter' button")
-				elem.Click()
+	vPrintln("Converting sensor info to internal format")
+	measurements, err = convertSensorInfo(result.Value)
+	checkErr()
+
+	return
+}
+
+type Measurement struct {
+	Label string
+	Value float32
+}
+
+func (m *Measurement) parseValue(s string) (err error) {
+	var b bytes.Buffer
+
+	// Take characters until the first non-digit
+	for _, r := range []rune(s) {
+		if !unicode.IsDigit(r) && r != '-' && r != '.' {
+			break
+		}
+		b.WriteRune(r)
+	}
+
+	f64, err := strconv.ParseFloat(b.String(), 32)
+	m.Value = float32(f64)
+	return
+}
+
+type Measurements struct {
+	InternalTemperatures []Measurement
+	ExternalTemperatures []Measurement
+	Humidities           []Measurement
+}
+
+func convertSensorInfo(raw []string) (measurements *Measurements, err error) {
+
+	const (
+		stateUnknown = iota
+		stateInternalTemps
+		stateHumidity
+		stateExternalTemps
+	)
+
+	// Information about the section of the raw measurements we are in (external temps, humidity, etc)
+	type section struct {
+		header string
+		// Which slice of measurements we should add the measurements of this section into
+		slice *[]Measurement
+	}
+
+	measurements = &Measurements{[]Measurement{}, []Measurement{}, []Measurement{}}
+
+	sections := []section{
+		stateUnknown:       section{"unknown", nil},
+		stateInternalTemps: section{"TEMPERATURE SENSORS", &measurements.InternalTemperatures},
+		stateHumidity:      section{"INSIDE HUMIDITY", &measurements.Humidities},
+		stateExternalTemps: section{"OUTSIDE TEMP.", &measurements.ExternalTemperatures},
+	}
+
+	// Only call this on possible header entries
+	nextState := func(hdr string) int {
+		for i, sec := range sections {
+			if sec.header == hdr {
+				return i
 			}
 		}
-	*/
+
+		return stateUnknown
+	}
+
+	state := stateUnknown
+	pairIndex := 0
+	var pair [2]string
+
+	for _, v := range raw {
+		if state == stateUnknown {
+			// Searching for a header
+			state = nextState(v)
+			pairIndex = 0
+			continue
+		}
+
+		// If we are on a header, change state
+		if ns := nextState(v); ns != stateUnknown {
+			state = ns
+			pairIndex = 0
+			continue
+		}
+
+		// Suck up two values
+		pair[pairIndex] = v
+		pairIndex = 1 - pairIndex
+		if pairIndex == 0 {
+			// Got both parts of the pair
+			msr := Measurement{Label: pair[0]}
+			err = msr.parseValue(pair[1])
+			if err != nil {
+				vPrintf("Error decoding sensor measurement '%s': %v", pair[1], err)
+				continue
+			}
+			*sections[state].slice = append(*sections[state].slice, msr)
+		}
+	}
+
 	return
 }
