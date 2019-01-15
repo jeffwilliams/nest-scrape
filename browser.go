@@ -1,6 +1,6 @@
 package main
 
-// Control firefox through marionette, in order to log into TD.
+// Control firefox through marionette
 // See https://developer.mozilla.org/en-US/docs/Mozilla/QA/Marionette/Protocol
 // https://firefox-source-docs.mozilla.org/testing/marionette/marionette/Intro.html#how-does-it-work
 
