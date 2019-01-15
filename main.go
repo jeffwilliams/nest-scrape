@@ -8,6 +8,7 @@ import (
 	flag "github.com/ogier/pflag"
 )
 
+var generate = flag.BoolP("generate", "g", false, "Generate a sample config file and exit")
 var verbose = flag.IntP("verbose", "v", 0, "Amount of verbosity")
 var showBrowser = flag.BoolP("show", "s", false, "Show the web browser being controlled, and don't close it when done.")
 var scrshotOnFailure = flag.StringP("failshot", "r", "", "On failure, save a screenshot of the browser to the specified file.")
@@ -16,6 +17,13 @@ var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each
 
 func main() {
 	flag.Parse()
+
+	if *generate {
+		if err := GenConfig(); err != nil {
+			fmt.Printf("Generating config file failed: %v\n", err)
+		}
+		return
+	}
 
 	Verbose = *verbose > 0
 

@@ -48,3 +48,26 @@ func LoadConfig() (config *Config, err error) {
 
 	return
 }
+
+func GenConfig() error {
+	if _, err := os.Stat(ConfigPath); err == nil {
+		return os.ErrExist
+	}
+
+	f, err := os.Create(ConfigPath)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	s := `# Sample nest-scraper config file
+# browserpath should be set to the absolute path of the firefox executable to run.
+browserpath: /path/to/firefox
+login: user@domain.com
+password: PASSWORD
+`
+
+	fmt.Fprintln(f, s)
+	return nil
+}
