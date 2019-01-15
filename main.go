@@ -12,11 +12,14 @@ var verbose = flag.IntP("verbose", "v", 0, "Amount of verbosity")
 var showBrowser = flag.BoolP("show", "s", false, "Show the web browser being controlled, and don't close it when done.")
 var scrshotOnFailure = flag.StringP("failshot", "r", "", "On failure, save a screenshot of the browser to the specified file.")
 var onlyLogin = flag.BoolP("login-only", "l", false, "Stop after logging into the bank")
+var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each page element loads")
 
 func main() {
 	flag.Parse()
 
 	Verbose = *verbose > 0
+
+	waitTime = time.Duration(*timeout) * time.Second
 
 	conf, err := LoadConfig()
 	if err != nil {

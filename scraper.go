@@ -16,8 +16,9 @@ const (
 	loginFieldId    = "email"
 	passwordFieldId = "pass"
 	loginButtonId   = "signin"
-	waitTime        = 5 * time.Second
 )
+
+var waitTime = 8 * time.Second
 
 type findFlag uint
 
