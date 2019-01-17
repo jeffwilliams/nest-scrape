@@ -39,6 +39,7 @@ func main() {
 		BrowserStartOpts{
 			BrowserPath: conf.BrowserPath,
 			ShowBrowser: *showBrowser,
+			ProfileDir:  conf.BrowserProfileDir,
 		})
 
 	if err != nil {

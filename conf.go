@@ -13,9 +13,10 @@ type BankConfig struct {
 }
 
 type Config struct {
-	BrowserPath string
-	Login       string
-	Password    string
+	BrowserPath       string
+	Login             string
+	Password          string
+	BrowserProfileDir string
 }
 
 const (
@@ -46,7 +47,31 @@ func LoadConfig() (config *Config, err error) {
 		return
 	}
 
+	err = validateConfig(config)
+
 	return
+}
+
+func validateConfig(config *Config) error {
+
+	strs := []struct {
+		name string
+		val  *string
+	}{
+		{"BrowserPath", &config.BrowserPath},
+		{"Login", &config.Login},
+		{"Password", &config.Password},
+		{"BrowserProfileDir", &config.BrowserProfileDir},
+	}
+
+	for _, v := range strs {
+		fmt.Printf("validateConfig: %v, '%s'\n", v, *v.val)
+		if len(*v.val) == 0 {
+			return fmt.Errorf("The %s setting cannot be empty.", v.name)
+		}
+	}
+
+	return nil
 }
 
 func GenConfig() error {
@@ -66,6 +91,9 @@ func GenConfig() error {
 browserpath: /path/to/firefox
 login: user@domain.com
 password: PASSWORD
+# Directory where firefox profile should be stored. Environment variables in this are 
+# expanded.
+browserprofiledir: $HOME/.nest-scrape/firefox-profile
 `
 
 	fmt.Fprintln(f, s)

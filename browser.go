@@ -34,10 +34,11 @@ func browserArgs(headless bool, profilePath string) (args []string) {
 type BrowserStartOpts struct {
 	BrowserPath string
 	ShowBrowser bool
+	ProfileDir  string
 }
 
 func StartBrowser(o BrowserStartOpts) (cmd *exec.Cmd, err error) {
-	profileDir := os.ExpandEnv("$HOME/.banker/td-firefox-profile")
+	profileDir := os.ExpandEnv(o.ProfileDir)
 	err = os.MkdirAll(profileDir, 0755)
 	if err != nil {
 		err = fmt.Errorf("Failed to make firefox profile directory: %v", err)
