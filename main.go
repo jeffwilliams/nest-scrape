@@ -77,10 +77,19 @@ func main() {
 
 	measurements, err := scraper.GetTemperatures(client, parms)
 
+	if err != nil {
+		fmt.Printf("Scraping failed: %v\n", err)
+		return
+	}
+
 	var format formatter
 	format = formatAsCsv
 
 	fmt.Println(format(measurements))
+
+	if !*showBrowser {
+		client.Quit()
+	}
 
 }
 

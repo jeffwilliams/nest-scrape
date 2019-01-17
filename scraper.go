@@ -100,7 +100,7 @@ func sendKeys(elem *mcl.WebElement, what, keys string) (err error) {
 
 func setValueOfActive(client *mcl.Client, value string) (err error) {
 	vPrintf("Setting the value of currently active element (i.e. last clicked) '%s'\n", value)
-	_, err = client.ExecuteScript(fmt.Sprintf("document.activeElement.value=\"%s\"", value), nil, 5, false)
+	_, err = client.ExecuteScript(fmt.Sprintf("document.activeElement.value=\"%s\"", value), []interface{}{}, 5, false)
 	return
 
 }
@@ -180,7 +180,7 @@ func (s Scraper) GetTemperatures(client *mcl.Client, parms ScraperParams) (measu
 	// ["TEMPERATURE SENSORS","Dining Room Thermostat","19.5°","Bedroom 1","17.5°","Bedroom 2","17.5°","Upstairs Hallway","19°","INSIDE HUMIDITY","Dining Room","31%","OUTSIDE TEMP.","Ottawa","-16°"]
 	//
 
-	resp, err := client.ExecuteScript(`return Array.from(document.querySelectorAll('.card.type-thermostat div[class*="style_title"],div[class*="style_value"],header')).map(function(val){ return val.textContent; })`, nil, 5, false)
+	resp, err := client.ExecuteScript(`return Array.from(document.querySelectorAll('.card.type-thermostat div[class*="style_title"],div[class*="style_value"],header')).map(function(val){ return val.textContent; })`, []interface{}{}, 5, false)
 	checkErr()
 
 	var result struct {
