@@ -40,6 +40,7 @@ func main() {
 			BrowserPath: conf.BrowserPath,
 			ShowBrowser: *showBrowser,
 			ProfileDir:  conf.BrowserProfileDir,
+			Verbose:     *verbose > 0,
 		})
 
 	if err != nil {

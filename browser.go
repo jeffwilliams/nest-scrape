@@ -35,6 +35,7 @@ type BrowserStartOpts struct {
 	BrowserPath string
 	ShowBrowser bool
 	ProfileDir  string
+	Verbose     bool
 }
 
 func StartBrowser(o BrowserStartOpts) (cmd *exec.Cmd, err error) {
@@ -49,8 +50,10 @@ func StartBrowser(o BrowserStartOpts) (cmd *exec.Cmd, err error) {
 
 	vPrintf("browser: running browser using cmd '%s %v'\n", o.BrowserPath, strings.Join(args, " "))
 	cmd = exec.Command(o.BrowserPath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if o.Verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 	err = cmd.Start()
 	return
 }
