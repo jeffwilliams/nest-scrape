@@ -65,7 +65,6 @@ func validateConfig(config *Config) error {
 	}
 
 	for _, v := range strs {
-		fmt.Printf("validateConfig: %v, '%s'\n", v, *v.val)
 		if len(*v.val) == 0 {
 			return fmt.Errorf("The %s setting cannot be empty.", v.name)
 		}

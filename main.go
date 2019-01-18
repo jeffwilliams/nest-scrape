@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
@@ -14,9 +13,16 @@ var showBrowser = flag.BoolP("show", "s", false, "Show the web browser being con
 var scrshotOnFailure = flag.StringP("failshot", "r", "", "On failure, save a screenshot of the browser to the specified file.")
 var onlyLogin = flag.BoolP("login-only", "l", false, "Stop after logging into the bank")
 var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each page element loads")
+var formatterName = flag.StringP("format", "f", "csv", "Output format. One of 'csv' or 'json'")
 
 func main() {
 	flag.Parse()
+
+	format, err := formatterFromName(*formatterName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	if *generate {
 		if err := GenConfig(); err != nil {
@@ -83,48 +89,16 @@ func main() {
 		return
 	}
 
-	var format formatter
-	format = formatAsCsv
+	str, err := format(measurements)
+	if err != nil {
+		fmt.Printf("Formatting output failed: %v\n", err)
+		return
+	}
 
-	fmt.Println(format(measurements))
+	fmt.Println(str)
 
 	if !*showBrowser {
 		client.Quit()
 	}
 
-}
-
-type formatter func(measurements *Measurements) string
-
-func formatAsCsv(measurements *Measurements) string {
-	var buf bytes.Buffer
-
-	// Header
-	fmt.Fprintf(&buf, "Time, ")
-	for _, v := range measurements.InternalTemperatures {
-		fmt.Fprintf(&buf, "%s Int. Temp., ", v.Label)
-	}
-	for _, v := range measurements.Humidities {
-		fmt.Fprintf(&buf, "%s Humid., ", v.Label)
-	}
-	for _, v := range measurements.ExternalTemperatures {
-		fmt.Fprintf(&buf, "%s Ext. Temp., ", v.Label)
-	}
-	buf.Truncate(buf.Len() - 2) // Undo last comma and space
-	buf.WriteRune('\n')
-
-	fmt.Fprintf(&buf, "%v, ", time.Now().Format("Jan 2 15:04:05 2006"))
-	for _, v := range measurements.InternalTemperatures {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	for _, v := range measurements.Humidities {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	for _, v := range measurements.ExternalTemperatures {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	buf.Truncate(buf.Len() - 2) // Undo last comma and space
-	buf.WriteRune('\n')
-
-	return buf.String()
 }
