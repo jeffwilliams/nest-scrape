@@ -13,7 +13,7 @@ var showBrowser = flag.BoolP("show", "s", false, "Show the web browser being con
 var scrshotOnFailure = flag.StringP("failshot", "r", "", "On failure, save a screenshot of the browser to the specified file.")
 var onlyLogin = flag.BoolP("login-only", "l", false, "Stop after logging into the bank")
 var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each page element loads")
-var formatterName = flag.StringP("format", "f", "csv", "Output format. One of 'csv' or 'json'")
+var formatterName = flag.StringP("format", "f", "csv+hdr", "Output format. One of 'csv+hdr', 'csv', or 'json'")
 
 func main() {
 	flag.Parse()

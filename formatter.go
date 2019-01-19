@@ -9,6 +9,24 @@ import (
 
 type formatter func(measurements *Measurements) (string, error)
 
+func formatAsCsvNoHeader(measurements *Measurements) (string, error) {
+	var buf bytes.Buffer
+
+	fmt.Fprintf(&buf, "%v, ", time.Now().Format("Jan 2 15:04:05 2006"))
+	for _, v := range measurements.InternalTemperatures {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	for _, v := range measurements.Humidities {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	for _, v := range measurements.ExternalTemperatures {
+		fmt.Fprintf(&buf, "%v, ", v.Value)
+	}
+	buf.Truncate(buf.Len() - 2) // Undo last comma and space
+
+	return buf.String(), nil
+}
+
 func formatAsCsv(measurements *Measurements) (string, error) {
 	var buf bytes.Buffer
 
@@ -26,20 +44,8 @@ func formatAsCsv(measurements *Measurements) (string, error) {
 	buf.Truncate(buf.Len() - 2) // Undo last comma and space
 	buf.WriteRune('\n')
 
-	fmt.Fprintf(&buf, "%v, ", time.Now().Format("Jan 2 15:04:05 2006"))
-	for _, v := range measurements.InternalTemperatures {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	for _, v := range measurements.Humidities {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	for _, v := range measurements.ExternalTemperatures {
-		fmt.Fprintf(&buf, "%v, ", v.Value)
-	}
-	buf.Truncate(buf.Len() - 2) // Undo last comma and space
-	buf.WriteRune('\n')
-	buf.WriteRune('$')
-	fmt.Printf("formatAsCsv: buf.String(): '%s'\n", buf.String())
+	s, _ := formatAsCsvNoHeader(measurements)
+	buf.Write([]byte(s))
 
 	return buf.String(), nil
 }
@@ -51,8 +57,10 @@ func formatAsJson(measurements *Measurements) (s string, err error) {
 
 func formatterFromName(name string) (formatter, error) {
 	switch name {
-	case "csv":
+	case "csv+hdr":
 		return formatAsCsv, nil
+	case "csv":
+		return formatAsCsvNoHeader, nil
 	case "json":
 		return formatAsJson, nil
 	default:
