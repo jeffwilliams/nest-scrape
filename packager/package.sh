@@ -69,6 +69,20 @@ popd 2>&1 > /dev/null
 sed -i -e 's|^\(browserpath:\).*|\1 firefox/firefox|' $outdir/nest.yaml
 sed -i -e 's|^\(browserprofiledir:\).*|\1 ff-profile|' $outdir/nest.yaml
 
+echo "== Generating Readme"
+cat > $outdir/README.txt <<HERE
+The nest-scrape tool is used to log into to the Nest website and retrieve the thermostat,
+temperature sensor, and humidity measurements, and the external temperature.
+
+This directory contains a pre-packaged binary version that includes the firefox browser that
+the tool needs. To run the script, first edit nest.yaml and set the login and password to
+the ones you use to log into the website. Then run the program from this directory, like:
+
+    ./nest-scrape
+
+Use the --help option for help. The -s option is useful for troubleshooting problems.
+HERE
+
 echo "== Archiving"
 archive="nest-scrape-$version.tar.gz"
 tar czf $archive $outdir
