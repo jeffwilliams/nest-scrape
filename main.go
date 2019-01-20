@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	flag "github.com/ogier/pflag"
@@ -16,6 +17,15 @@ var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each
 var formatterName = flag.StringP("format", "f", "csv+hdr", "Output format. One of 'csv+hdr', 'csv', or 'json'")
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Log into to the Nest website and retrieve the thermostat, ")
+		fmt.Fprintln(os.Stderr, "temperature sensor, and humidity measurements, and the external")
+		fmt.Fprintln(os.Stderr, "temperature.")
+		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	format, err := formatterFromName(*formatterName)
