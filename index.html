@@ -1,0 +1,47 @@
+<html data-theme=code>
+  <head>
+    <link href="basic.css" rel="stylesheet">
+    <!--<link href=http://staticresource.com/basic.css rel=stylesheet>-->
+  </head>
+
+  <body>
+    <h1>Nest-Scrape</h1>
+    <p>
+      This program logs into to the Nest website and retrieves the thermostat, temperature sensor, and humidity measurements, and the external temperature. It's a workaround for the fact that the Nest API doesn't allow retrieval of the temperature sensor measurements.
+    </p>
+    <p>
+      It works by starting the firefox browser in headless mode, and controlling it via the marionette protocol to perform the login. After login, it scrapes the web UI to retrieve the sensor information and prints it out two lines: a line of comma-separated headings, and a line of comma separated measurements, like so:
+    </p>
+ 
+    <pre>
+Time, Dining Room Thermostat Int. Temp., Bedroom 1 Int. Temp., Bedroom 2 Int. Temp., Upstairs Hallway Int. Temp., Dining Room Humid., Home Ext. Temp.<br/>
+Jan 14 14:54:16 2019, 20, 18.5, 18.5, 19.5, 31, -8
+    </pre>
+
+    <p>Alternately it can output JSON:</p>
+
+    <pre>
+{"InternalTemperatures":[{"Label":"Dining Room Thermostat","Value":20.5},{"Label":"Bedroom 1","Value":18.5},{"Label":"Bedroom 2","Value":19},{"Label":"Upstairs Hallway","Value":19.5}],"ExternalTemperatures":[{"Label":"Home","Value":-21}],"Humidities":[{"Label":"Dining Room","Value":29}]}
+    </pre>
+
+    <h2>Source Code</h2>
+ 
+    <p>   
+    Find the source code on <a href="http://github.com/jeffwilliams/nest-scrape">Github</a>.
+    </p>
+
+    <h2>Download</h2>
+
+    <p>
+      Pre-packaged binary versions are available which include the compatible version of firefox. See the README file in the package for usage instructions. 
+    </p>
+    <p>
+    <a href="#">Linux 64-bit</a> <br/>
+    <a href="#">Linux 32-bit</a> <br/>
+    </p>
+
+
+
+  </body>
+
+</html>
