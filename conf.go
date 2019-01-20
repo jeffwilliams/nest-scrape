@@ -86,12 +86,13 @@ func GenConfig() error {
 	defer f.Close()
 
 	s := `# Sample nest-scraper config file
-# browserpath should be set to the absolute path of the firefox executable to run.
-browserpath: /path/to/firefox
+# Login and password for the nest website
 login: user@domain.com
 password: PASSWORD
-# Directory where firefox profile should be stored. Environment variables in this are 
-# expanded.
+# browserpath should be set to the absolute path of the firefox executable to run.
+browserpath: /path/to/firefox
+# browserprofiledir should be set to the directory where firefox profile 
+# will be stored. Environment variables in this are expanded.
 browserprofiledir: $HOME/.nest-scrape/firefox-profile
 `
 

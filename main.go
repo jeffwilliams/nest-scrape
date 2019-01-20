@@ -15,6 +15,9 @@ var scrshotOnFailure = flag.StringP("failshot", "r", "", "On failure, save a scr
 var onlyLogin = flag.BoolP("login-only", "l", false, "Stop after logging into the bank")
 var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each page element loads")
 var formatterName = flag.StringP("format", "f", "csv+hdr", "Output format. One of 'csv+hdr', 'csv', or 'json'")
+var showVersion = flag.BoolP("version", "e", false, "Output version and exit")
+
+var version = "undefined"
 
 func main() {
 	flag.Usage = func() {
@@ -38,6 +41,11 @@ func main() {
 		if err := GenConfig(); err != nil {
 			fmt.Printf("Generating config file failed: %v\n", err)
 		}
+		return
+	}
+
+	if *showVersion {
+		fmt.Printf("Version %s\n", version)
 		return
 	}
 
