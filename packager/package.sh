@@ -84,7 +84,7 @@ Use the --help option for help. The -s option is useful for troubleshooting prob
 HERE
 
 echo "== Archiving"
-archive="nest-scrape-$version.tar.gz"
+archive="nest-scrape-$arch-$version.tar.gz"
 tar czf $archive $outdir
 
 echo "== Done packaging. Result is $archive"
