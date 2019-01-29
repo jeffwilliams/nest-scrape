@@ -8,7 +8,7 @@ import (
 	"time"
 	"unicode"
 
-	mcl "github.com/njasm/marionette_client"
+	mcl "github.com/jeffwilliams/marionette_client"
 )
 
 const (
@@ -90,11 +90,7 @@ func findBy(client *mcl.Client, fieldNameForLog, val string, flags findFlag, by 
 
 func sendKeys(elem *mcl.WebElement, what, keys string) (err error) {
 	vPrintf("Entering the string '%s' into %s\n", keys, what)
-	err = elem.SendKeys(keys)
-	if err != nil {
-		err = fmt.Errorf("When entering %s, got an error: %s", what, err.Error())
-		return
-	}
+	elem.SendKeys(keys)
 	return
 }
 

@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	mcl "github.com/njasm/marionette_client"
+	mcl "github.com/jeffwilliams/marionette_client"
 )
 
 func browserArgs(headless bool, profilePath string) (args []string) {
