@@ -16,6 +16,7 @@ var onlyLogin = flag.BoolP("login-only", "l", false, "Stop after logging into th
 var timeout = flag.IntP("timeout", "t", 8, "Number of seconds to wait until each page element loads")
 var formatterName = flag.StringP("format", "f", "csv+hdr", "Output format. One of 'csv+hdr', 'csv', or 'json'")
 var showVersion = flag.BoolP("version", "e", false, "Output version and exit")
+var dontCheckConfFilePerms = flag.BoolP("no-check-perms", "p", false, "Don't perform the permissions check on the config file")
 
 var version = "undefined"
 
@@ -53,7 +54,7 @@ func main() {
 
 	waitTime = time.Duration(*timeout) * time.Second
 
-	conf, err := LoadConfig()
+	conf, err := LoadConfig(!*dontCheckConfFilePerms)
 	if err != nil {
 		fmt.Printf("Loading config failed: %v\n", err)
 		return
