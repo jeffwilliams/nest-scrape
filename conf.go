@@ -23,18 +23,20 @@ const (
 	ConfigPath = "nest.yaml"
 )
 
-func LoadConfig() (config *Config, err error) {
+func LoadConfig(checkPerms bool) (config *Config, err error) {
 
 	fi, err := os.Stat(ConfigPath)
 	if err != nil {
 		return
 	}
 
-	// Make sure that group and other have no permissions on the file
-	perms := fi.Mode().Perm()
-	if perms&077 != 0 {
-		err = fmt.Errorf("The permissions on the config file must not allow group or other any access")
-		return
+	if checkPerms {
+		// Make sure that group and other have no permissions on the file
+		perms := fi.Mode().Perm()
+		if perms&077 != 0 {
+			err = fmt.Errorf("The permissions on the config file must not allow group or other any access")
+			return
+		}
 	}
 
 	raw, err := ioutil.ReadFile(ConfigPath)
